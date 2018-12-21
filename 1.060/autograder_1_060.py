@@ -60,7 +60,7 @@ def generate_drive_credential():
     service = build('drive', 'v3', http=creds.authorize(Http()))
     return service    
 
-name_dict = {'abelnere':'ABEL NERE',}
+name_dict = {'samyebio':'SIEM YEBIO',}
 
 
 
@@ -74,7 +74,7 @@ for filename in os.listdir('.'):
             if match:
 
                 # construct query here
-                rubric_file = name_dict[key] + ' - Python 1.040 - Rubric'
+                rubric_file = name_dict[key] + ' - Python 1.060 - Rubric'
                 query = 'name=' + "'" + rubric_file + "'"
 
                 # Google drive API to get ID of file
@@ -101,7 +101,7 @@ for filename in os.listdir('.'):
                         # sheets API to make edit to file for helps
                         p_body = { 'values': [['0']] }
                     else:
-                        p_body = { 'values': [['-2.5']] }
+                        p_body = { 'values': [['-5']] }
                    
                     # Edit Google sheet for helps
                     range_name = 'Rubric' + '!B4'    
@@ -114,14 +114,11 @@ for filename in os.listdir('.'):
                     cmd = 'pycodestyle ' + filename + ' | wc -l  '
                     c = delegator.run(cmd)
                     side_errors = int(c.out)
-                    side_errors = min(side_errors, 7)
+                    side_errors = min(side_errors, 14)
                     side_errors *= -1
 
                     # sheets API to make edit to file for number of errors
-                    p_body = {
-                        'values': [[side_errors]]
-                        }
-
+                    p_body = { 'values': [[side_errors]] }
                     # Edit Google sheet for PEP8 errors (B9)
                     range_name = 'Rubric' + '!B9'
                     result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
@@ -129,119 +126,115 @@ for filename in os.listdir('.'):
                                                                            valueInputOption='USER_ENTERED',
                                                                            body=p_body).execute()
 
-                    # check for 3 questions
+                    # Check that asks at least 5 questions
                     cmd = 'grep "input" ' + filename + ' | wc -l  '
                     c = delegator.run(cmd)
                     inputs = int(c.out)
-                    if inputs < 3:
-                        # sheets API to make edit to file for helps
+                    
+                    # sheets API to make edit to file for at least 5 questions
+                    if inputs < 5:
                         p_body = { 'values': [['-5']] }
                     else:
                         p_body = { 'values': [['0']] }
-                    
-                    # Sheets API to make edit for 3 questions (F4)
                     range_name = 'Rubric' + '!F4'
                     result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
                                                                            range=range_name,
                                                                            valueInputOption='USER_ENTERED',
                                                                            body=p_body).execute()
 
-                    # Check for 3 questions output in correct order
-                    filename_output = filename + '.out'
-                    cmd = '/usr/local/bin/python3.6 ' + filename + ' < 1.040\.in > '\
-                        + filename_output
+                    # Check that inputs are named after part of speech
+                    cmd = 'grep -E "verb|noun|adjective|adverb|preposition" ' + filename + ' | wc -l  '
                     c = delegator.run(cmd)
+                    parts_of_speech = int(c.out)
                     
-                    with open(filename_output, 'r') as myfile:
-                        outfile_data = myfile.read()
-                    
-                    search_object = re.search(r".+ "
-                                              r"a1 "
-                                              r".+ "
-                                              r"a2 "
-                                              r".+ "
-                                              r"a3 "
-                                              r".+ "
-                                              , outfile_data, re.X|re.M|re.S)
-                    if not search_object or c.err:
+                    # Sheets API to test for parts of speech
+                    if parts_of_speech < 5:
                         p_body = { 'values': [['-5']] }
                     else:
                         p_body = { 'values': [['0']] }
-                   
-                    # Sheets API to make edit for reply for 3 questions (F5)
                     range_name = 'Rubric' + '!F5'
                     result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
                                                                            range=range_name,
                                                                            valueInputOption='USER_ENTERED',
                                                                            body=p_body).execute()
-
-                    #  Check for part 2 asks 3 more questions, 6 total
-                    cmd = 'grep "input" ' + filename + ' | wc -l  '
+                        
+                    # Check for at least 1 print statement
+                    cmd = 'grep "print" ' + filename + ' | wc -l  '
                     c = delegator.run(cmd)
-                    inputs = int(c.out)
-                    if inputs < 6:
-                        p_body = { 'values': [['-5']] }                                
+                    prints = int(c.out)
+                    if prints < 1:
+                        p_body = { 'values': [['-5']] }
                     else:
-                        p_body = { 'values': [['0']] }                                
-
-
-                    # Sheets API to make edit for at least 6 inputs (F6)
+                        p_body = { 'values': [['0']] }
                     range_name = 'Rubric' + '!F6'
                     result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
                                                                            range=range_name,
                                                                            valueInputOption='USER_ENTERED',
                                                                            body=p_body).execute()
-
-                    # Check for asking variable questions
-                    process_grep1 = subprocess.Popen(['grep', "input([\"']", filename], stdout=subprocess.PIPE)
-                    process_wc = subprocess.Popen(['wc', '-l'], stdin=process_grep1.stdout, stdout=subprocess.PIPE)
-                    process_grep1.wait()
-                    process_grep1.stdout.close()
-                    output_string = str(process_wc.communicate()[0])
-                    match_object = re.search(r"([0-9]+)", output_string)
-                    inputs_variable = int(match_object.group())
-                    if inputs_variable > 4  :
-                        p_body = { 'values': [['-5']] }                                
-                    else:
-                        p_body = { 'values': [['0']] }             
-
-                    # Sheets API to make edit for question in variable (F7)
-                    range_name = 'Rubric' + '!F7'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()                    
-
-                    # Check for 6 outputs in correct order given 6 inputs
-                    cmd = '/usr/local/bin/python3.6 ' + filename + ' < 1.040\.in > '\
-                        + filename_output
-                    c = delegator.run(cmd)
-
-                    search_object = re.search(r".+ "
-                                              r"a1 "
-                                              r".+ "
-                                              r"a2 "
-                                              r".+ "
-                                              r"a3 "
-                                              r".+ "
-                                              r"b2 "
-                                              r".+ "
-                                              r"b3 "
-                                              r".+ "
-                                              r"b1"
-                                              , outfile_data, re.X|re.M|re.S)
-                    if not search_object or c.err:
+                        
+                    # Check for less than 3 print statement
+                    if prints > 3:
                         p_body = { 'values': [['-5']] }
                     else:
                         p_body = { 'values': [['0']] }
+                    range_name = 'Rubric' + '!F7'
+                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id,
+                                                                           range=range_name,
+                                                                           valueInputOption='USER_ENTERED',
+                                                                           body=p_body).execute()
 
-
-                    # Sheets API to make edit for at 6 inputs with outputs in correct order (F8)
+                    # Check that things are in correct order.  First 5 inputs show up in output)
+                    filename_output = filename + '.out'
+                    cmd = '/usr/local/bin/python3.6 ' + filename + ' < /users/teacher/PycharmProjects/untitled/1.060/1.060.in > ' \
+                        + filename_output
+                    c = delegator.run(cmd)
+                    if c.err:
+                        print('bad! You have an error somewhere in running program 5 inputs show up in output')
+                    with open(filename_output, 'r') as myfile:
+                        outfile_data = myfile.read()
+                            
+                    search_object_1 = re.search(r"a1", outfile_data, re.X | re.M | re.S)
+                    search_object_2 = re.search(r"a2", outfile_data, re.X | re.M | re.S)
+                    search_object_3 = re.search(r"a3", outfile_data, re.X | re.M | re.S)
+                    search_object_4 = re.search(r"b1", outfile_data, re.X | re.M | re.S)
+                    search_object_5 = re.search(r"b2", outfile_data, re.X | re.M | re.S)
+                    if search_object_1 and search_object_2 and search_object_3 and search_object_4 and search_object_5:
+                        p_body = { 'values': [['0']] }
+                    else:
+                        p_body = { 'values': [['-15']] }
                     range_name = 'Rubric' + '!F8'
                     result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
                                                                            range=range_name,
                                                                            valueInputOption='USER_ENTERED',
                                                                            body=p_body).execute()
+                    
+                    # Check for 3 punctuations
+                    filename_output = filename + '.out'
+                    cmd = '/usr/local/bin/python3.6 ' + filename + ' < /users/teacher/PycharmProjects/untitled/1.060/1.060.in > ' \
+                        + filename_output
+                    c = delegator.run(cmd)
+                    if c.err:
+                        print('bad! You have an error somewhere in running program punctuations')
+                        print(c.err)
+                    with open(filename_output, 'r') as myfile:
+                        outfile_data = myfile.read()
+                    
+                    num_periods = outfile_data.count('.')
+                    num_questions = outfile_data.count('?')
+                    num_exclamations = outfile_data.count('!')
+                    num_punctuations = num_periods + num_questions + num_exclamations
+                    if num_punctuations < 3:
+                        p_body = { 'values': [['-5']] }
+                    else:
+                        p_body = { 'values': [['0']] }
+                    range_name = 'Rubric' + '!F9'
+                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
+                                                                           range=range_name,
+                                                                           valueInputOption='USER_ENTERED',
+                                                                           body=p_body).execute()
+                        
+ 
+                    
                     
                     
 
