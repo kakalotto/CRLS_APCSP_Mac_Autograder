@@ -60,7 +60,7 @@ def generate_drive_credential():
     service = build('drive', 'v3', http=creds.authorize(Http()))
     return service    
 
-name_dict = {'abelnere':'ABEL NERE',}
+name_dict = {'liam':'LIAM PACE',}
 
 
 
