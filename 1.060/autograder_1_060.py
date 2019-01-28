@@ -11,6 +11,7 @@ import re
 import subprocess
 import delegator
 
+import name_dictionary
 
 def generate_drive_credential():
 
@@ -60,7 +61,6 @@ def generate_drive_credential():
     service = build('drive', 'v3', http=creds.authorize(Http()))
     return service    
 
-name_dict = {'samyebio':'SIEM YEBIO',}
 
 
 
@@ -69,12 +69,12 @@ service_drive = generate_drive_credential()
 
 for filename in os.listdir('.'):
     if filename.endswith('.py'):
-        for key in name_dict:
+        for key in name_dictionary.name_dict:
             match = re.match('.+' + key + '.+', filename) 
             if match:
 
                 # construct query here
-                rubric_file = name_dict[key] + ' - Python 1.060 - Rubric'
+                rubric_file = name_dictionary.name_dict[key] + ' - Python 1.060 - Rubric'
                 query = 'name=' + "'" + rubric_file + "'"
 
                 # Google drive API to get ID of file

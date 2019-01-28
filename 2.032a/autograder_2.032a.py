@@ -6,7 +6,11 @@
 #[pycodestyle]
 #max-line-length = 120
 
+# NOTE TO SELF - RUBRIC HAD AN EXTRA SPACE IN S2 2019.  THIS WAS FIXED SO NEXT TIME 
+# REMOVE EXTRA SPACE FROM LINE 79
+
 import name_dictionary
+
 import os
 import re
 import subprocess
@@ -63,6 +67,7 @@ def generate_drive_credential():
 
 
 
+
 service_sheets = generate_sheets_credential()
 service_drive = generate_drive_credential()
 
@@ -71,11 +76,9 @@ for filename in os.listdir('.'):
         for key in name_dictionary.name_dict:
             match = re.match('.+' + key + '.+', filename) 
             if match:
-
                 # construct query here
-                rubric_file = name_dictionary.name_dict[key] + ' - Python 1.040 - Rubric'
+                rubric_file = name_dictionary.name_dict[key] + ' -  Python 2.032 - Rubric'
                 query = 'name=' + "'" + rubric_file + "'"
-
                 # Google drive API to get ID of file
                 page_token = None
                 response = service_drive.files().list(q=query,
@@ -83,7 +86,6 @@ for filename in os.listdir('.'):
                                       fields='nextPageToken, files(id, name)',
                                      pageToken=page_token).execute()
                 for file in response.get('files', []):
-
 
 
                     print("File is {}  id is {}".format(file.get('name'), file.get('id')))
@@ -110,137 +112,127 @@ for filename in os.listdir('.'):
                                                                                body=p_body).execute()
 
                     # Find number of PEP8 errors
-                    cmd = 'pycodestyle ' + filename + ' | wc -l  '
+                    cmd = 'pycodestyle  --max-line-length=120 ' + filename + ' | wc -l  '
                     c = delegator.run(cmd)
                     side_errors = int(c.out)
                     side_errors = min(side_errors, 7)
                     side_errors *= -1
 
                     # sheets API to make edit to file for number of errors
-                    p_body = {
-                        'values': [[side_errors]]
-                        }
-
-                    # Edit Google sheet for PEP8 errors (B9)
-                    range_name = 'Rubric' + '!B9'
+                    p_body = { 'values': [[side_errors]] }
+                    # Edit Google sheet for PEP8 errors (B10)
+                    range_name = 'Rubric' + '!B10'
                     result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
                                                                            range=range_name,
                                                                            valueInputOption='USER_ENTERED',
                                                                            body=p_body).execute()
 
-                    # check for 3 questions
-                    cmd = 'grep "input" ' + filename + ' | wc -l  '
+                    # Check for ifs
+                    cmd = 'grep "if" ' + filename + ' | wc -l  '
                     c = delegator.run(cmd)
-                    inputs = int(c.out)
-                    if inputs < 3:
-                        # sheets API to make edit to file for helps
-                        p_body = { 'values': [['-5']] }
-                    else:
+                    ifs = int(c.out)
+
+                    # Sheets API to make edit to file for if or no (2.032a)
+                    if ifs == 0:
                         p_body = { 'values': [['0']] }
+                    else:
+                        p_body = { 'values': [['-5']] }
                     
-                    # Sheets API to make edit for 3 questions (F4)
-                    range_name = 'Rubric' + '!F4'
+                    # sheets API to make edit to file ifs
+                    # Edit Google sheet for if  (F7))
+                    range_name = 'Rubric' + '!F7'
                     result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
                                                                            range=range_name,
                                                                            valueInputOption='USER_ENTERED',
                                                                            body=p_body).execute()
 
-                    # Check for 3 questions output in correct order
+
+                    # test all 8 cases
+                    eight_cases_score = 0
                     filename_output = filename + '.out'
-                    cmd = '/usr/local/bin/python3.6 ' + filename + ' < 1.040\.in > '\
+
+                    cmd = 'python3 ' + filename + ' < /Users/teacher/PycharmProjects/untitled/2.032a/2.032a-1.in > ' \
                         + filename_output
                     c = delegator.run(cmd)
-                    
+                    cmd = 'cat ' + filename_output
+                    c = delegator.run(cmd)
+
                     with open(filename_output, 'r') as myfile:
                         outfile_data = myfile.read()
-                    
-                    search_object = re.search(r".+ "
-                                              r"a1 "
-                                              r".+ "
-                                              r"a2 "
-                                              r".+ "
-                                              r"a3 "
-                                              r".+ "
-                                              , outfile_data, re.X|re.M|re.S)
-                    if not search_object or c.err:
-                        p_body = { 'values': [['-5']] }
-                    else:
-                        p_body = { 'values': [['0']] }
-                   
-                    # Sheets API to make edit for reply for 3 questions (F5)
+                    search_object = re.search(r"False", outfile_data, re.X | re.M | re.S)
+                    if search_object:
+                        eight_cases_score += 1
+                                
+                    cmd = 'python3 ' + filename + ' < /Users/teacher/PycharmProjects/untitled/2.032a/2.032a-2.in > ' \
+                        + filename_output
+                    c = delegator.run(cmd)
+                    with open(filename_output, 'r') as myfile:
+                        outfile_data = myfile.read()
+                    search_object = re.search(r"False", outfile_data, re.X | re.M | re.S)
+                    if search_object:
+                        eight_cases_score += 1
+
+                    cmd = 'python3 ' + filename + ' < /Users/teacher/PycharmProjects/untitled/2.032a/2.032a-3.in > ' \
+                        + filename_output
+                    c = delegator.run(cmd)
+                    with open(filename_output, 'r') as myfile:
+                        outfile_data = myfile.read()
+                    search_object = re.search(r"True", outfile_data, re.X | re.M | re.S)
+                    if search_object:
+                        eight_cases_score += 1
+
+                    cmd = 'python3 ' + filename + ' < /Users/teacher/PycharmProjects/untitled/2.032a/2.032a-4.in > ' \
+                        + filename_output
+                    c = delegator.run(cmd)
+                    with open(filename_output, 'r') as myfile:
+                        outfile_data = myfile.read()
+                    search_object = re.search(r"False", outfile_data, re.X | re.M | re.S)
+                    if search_object:
+                        eight_cases_score += 1
+
+
+                    cmd = 'python3 ' + filename + ' < /Users/teacher/PycharmProjects/untitled/2.032a/2.032a-5.in > ' \
+                        + filename_output
+                    c = delegator.run(cmd)
+                    with open(filename_output, 'r') as myfile:
+                        outfile_data = myfile.read()
+                    search_object = re.search(r"False", outfile_data, re.X | re.M | re.S)
+                    if search_object:
+                        eight_cases_score += 1
+
+                    cmd = 'python3 ' + filename + ' < /Users/teacher/PycharmProjects/untitled/2.032a/2.032a-6.in > ' \
+                        + filename_output
+                    c = delegator.run(cmd)
+                    with open(filename_output, 'r') as myfile:
+                        outfile_data = myfile.read()
+                    search_object = re.search(r"False", outfile_data, re.X | re.M | re.S)
+                    if search_object:
+                        eight_cases_score += 1
+
+                    cmd = 'python3 ' + filename + ' < /Users/teacher/PycharmProjects/untitled/2.032a/2.032a-7.in > ' \
+                        + filename_output
+                    c = delegator.run(cmd)
+                    with open(filename_output, 'r') as myfile:
+                        outfile_data = myfile.read()
+                    search_object = re.search(r"False", outfile_data, re.X | re.M | re.S)
+                    if search_object:
+                        eight_cases_score += 1
+
+                    cmd = 'python3 ' + filename + ' < /Users/teacher/PycharmProjects/untitled/2.032a/2.032a-8.in > ' \
+                        + filename_output
+                    c = delegator.run(cmd)
+                    with open(filename_output, 'r') as myfile:
+                        outfile_data = myfile.read()
+                    search_object = re.search(r"False", outfile_data, re.X | re.M | re.S)
+                    if search_object:
+                        eight_cases_score += 1
+
+                    eight_cases_score *= -(8 - eight_cases_score)
+                    # Sheets API to make edit to file for test cases
+                    p_body = { 'values': [[eight_cases_score]] }                    
                     range_name = 'Rubric' + '!F5'
                     result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
                                                                            range=range_name,
                                                                            valueInputOption='USER_ENTERED',
                                                                            body=p_body).execute()
-
-                    #  Check for part 2 asks 3 more questions, 6 total
-                    cmd = 'grep "input" ' + filename + ' | wc -l  '
-                    c = delegator.run(cmd)
-                    inputs = int(c.out)
-                    if inputs < 6:
-                        p_body = { 'values': [['-5']] }                                
-                    else:
-                        p_body = { 'values': [['0']] }                                
-
-
-                    # Sheets API to make edit for at least 6 inputs (F6)
-                    range_name = 'Rubric' + '!F6'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
-
-                    # Check for asking variable questions
-                    process_grep1 = subprocess.Popen(['grep', "input([\"']", filename], stdout=subprocess.PIPE)
-                    process_wc = subprocess.Popen(['wc', '-l'], stdin=process_grep1.stdout, stdout=subprocess.PIPE)
-                    process_grep1.wait()
-                    process_grep1.stdout.close()
-                    output_string = str(process_wc.communicate()[0])
-                    match_object = re.search(r"([0-9]+)", output_string)
-                    inputs_variable = int(match_object.group())
-                    if inputs_variable > 4  :
-                        p_body = { 'values': [['-5']] }                                
-                    else:
-                        p_body = { 'values': [['0']] }             
-
-                    # Sheets API to make edit for question in variable (F7)
-                    range_name = 'Rubric' + '!F7'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()                    
-
-                    # Check for 6 outputs in correct order given 6 inputs
-                    cmd = '/usr/local/bin/python3.6 ' + filename + ' < 1.040\.in > '\
-                        + filename_output
-                    c = delegator.run(cmd)
-
-                    search_object = re.search(r".+ "
-                                              r"a1 "
-                                              r".+ "
-                                              r"a2 "
-                                              r".+ "
-                                              r"a3 "
-                                              r".+ "
-                                              r"b2 "
-                                              r".+ "
-                                              r"b3 "
-                                              r".+ "
-                                              r"b1"
-                                              , outfile_data, re.X|re.M|re.S)
-                    if not search_object or c.err:
-                        p_body = { 'values': [['-5']] }
-                    else:
-                        p_body = { 'values': [['0']] }
-
-
-                    # Sheets API to make edit for at 6 inputs with outputs in correct order (F8)
-                    range_name = 'Rubric' + '!F8'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
-                    
-                    
 

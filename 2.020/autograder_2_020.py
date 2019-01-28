@@ -6,6 +6,9 @@
 #[pycodestyle]
 #max-line-length = 120
 
+
+import name_dictionary
+
 import os
 import re
 import subprocess
@@ -60,7 +63,6 @@ def generate_drive_credential():
     service = build('drive', 'v3', http=creds.authorize(Http()))
     return service    
 
-name_dict = {'samyebio':'SIEM YEBIO',}
 
 
 
@@ -69,12 +71,12 @@ service_drive = generate_drive_credential()
 
 for filename in os.listdir('.'):
     if filename.endswith('.py'):
-        for key in name_dict:
+        for key in name_dictionary.name_dict:
             match = re.match('.+' + key + '.+', filename) 
             if match:
 
                 # construct query here
-                rubric_file = name_dict[key] + ' - Python 2.020 - Rubric'
+                rubric_file = name_dictionary.name_dict[key] + ' - Python 2.020 - Rubric'
                 query = 'name=' + "'" + rubric_file + "'"
 
                 # Google drive API to get ID of file
@@ -111,7 +113,7 @@ for filename in os.listdir('.'):
                                                                                body=p_body).execute()
 
                     # Find number of PEP8 errors
-                    cmd = 'pycodestyle ' + filename + ' | wc -l  '
+                    cmd = 'pycodestyle  --max-line-length=120 ' + filename + ' | wc -l  '
                     c = delegator.run(cmd)
                     side_errors = int(c.out)
                     side_errors = min(side_errors, 14)
@@ -149,7 +151,7 @@ for filename in os.listdir('.'):
 
 
                     # Check that divides by 2 correctly (integer)
-                    search_object = re.search(r"49", outfile_data, re.X | re.M | re.S)
+                    search_object = re.search(r"49$", outfile_data, re.X | re.M | re.S)
                     
                     # Sheets API to edit to file for divide by 2 correctly (integer)
                     if not search_object:
