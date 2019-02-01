@@ -53,8 +53,14 @@ result = service_sheets.spreadsheets().values().get(majorDimension='COLUMNS',
                                                     range=RANGE_NAME, ).execute()
 columns = result.get('values', [])
 emails = columns[0]
+scores = columns[1]
+for score in scores:
+    print(score)
+    score_list = score.split('/')
+    percent = float(score_list[0]) / float(score_list[1])
+    print(percent)
 for email in emails:
-
+    print(email)
  # for key in name_dictionary.name_dict:
 #             match = re.match('.+' + key + '.+', filename)
 #             if match:
