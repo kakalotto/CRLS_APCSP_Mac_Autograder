@@ -54,52 +54,51 @@ result = service_sheets.spreadsheets().values().get(majorDimension='COLUMNS',
 columns = result.get('values', [])
 emails = columns[0]
 scores = columns[1]
-for score in scores:
-    print(score)
-    score_list = score.split('/')
-    percent = float(score_list[0]) / float(score_list[1])
-    print(percent)
-for email in emails:
-    print(email)
- # for key in name_dictionary.name_dict:
-#             match = re.match('.+' + key + '.+', filename)
-#             if match:
-#
-#                 # construct query here
-#                 rubric_file = name_dictionary.name_dict[key] + ' - Python 1.020 - Rubric'
-#                 query = 'name=' + "'" + rubric_file + "'"
-#
-#                 # Google drive API to get ID of file
-#                 page_token = None
-#                 response = service_drive.files().list(q=query,
-#                                       spaces='drive',
-#                                       fields='nextPageToken, files(id, name)',
-#                                      pageToken=page_token).execute()
-#                 for file in response.get('files', []):
-#
-#
-#
-#                     print("File is {}  id is {}".format(file.get('name'), file.get('id')))
-#                     spreadsheet_id = file.get('id')
-#
-#
-#
-#                     # sheets API to make edit to file if help_comment is found
-#                     if help_comments > 0:
-#                         # sheets API to make edit to file for helps
-#                         p_body = { 'values': [['0']] }
-#                     else:
-#                         p_body = { 'values': [['-2.5']] }
-#
-#
-#
-#
-#                     # Sheets API to update score (B22)
-#                     range_name = 'Rubric' + '!B22'
-#                     result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id,
-#                                                                            range=range_name,
-#                                                                            valueInputOption='USER_ENTERED',
-#                                                                            body=p_body).execute()
-#
-#
-#
+#for score in scores:
+#    print(score)
+#    score_list = score.split('/')
+#    percent = float(score_list[0]) / float(score_list[1])
+#    print(percent)
+#for email in emails:
+#    print(email)
+
+completed = []
+for index, email in enumerate(emails, 0):
+
+    # Get filename 
+    print("trying this email " + str(email) + " " + str(index))
+    rubric_file = names_to_emails.names_to_emails[email] + ' - Python 1.020 - Rubric'
+    query = 'name=' + "'" + rubric_file + "'"
+
+    # Google drive API to get ID of file
+    page_token = None
+    response = service_drive.files().list(q=query,
+                                          spaces='drive',
+                                          fields='nextPageToken, files(id, name)',
+                                          pageToken=page_token).execute()
+    
+    # Found the file
+    for file in response.get('files', []):
+        print("File is {}  id is {}".format(file.get('name'), file.get('id')))
+        completed.append(emails)
+        
+        # Get the file ID and write to it
+        spreadsheet_id = file.get('id')
+        score_list = scores[index].split('/')
+        percent = float(score_list[0]) / float(score_list[1])
+        print(percent)
+
+        score = -10 * (1 - percent)
+        print("the score is this " + str(score))
+
+        p_body = { 'values': [[score]] }
+        
+        # Sheets API to update score (B22)
+        range_name = 'Sheet1' + '!B22'
+        result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id,
+                                                               range=range_name,
+                                                               valueInputOption='USER_ENTERED',
+                                                               body=p_body).execute()
+        
+
+
