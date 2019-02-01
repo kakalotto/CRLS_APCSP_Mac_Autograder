@@ -9,8 +9,6 @@
 import names_to_emails
 import os
 import re
-import subprocess
-import delegator
 
 def generate_sheets_credential():
 
@@ -47,46 +45,55 @@ def generate_drive_credential():
 service_sheets = generate_sheets_credential()
 service_drive = generate_drive_credential()
 
-quiz_spreadsheet_id ='1xpK29hu14BwuFDHSStDDj4p4Qhf_2LJYvFogarj8WPI'
-for key in name_dictionary.name_dict:
-            match = re.match('.+' + key + '.+', filename) 
-            if match:
+quiz_spreadsheet_id ='1xpK29hu14BwuFDHSStDDj4p4Qhf_2LjYvFogarJ8WPI'
+# Read from daily sheet
+RANGE_NAME = 'Form Responses 1!B2:C32'
+result = service_sheets.spreadsheets().values().get(majorDimension='COLUMNS',
+                                                    spreadsheetId=quiz_spreadsheet_id,
+                                                    range=RANGE_NAME, ).execute()
+columns = result.get('values', [])
+emails = columns[0]
+for email in emails:
 
-                # construct query here
-                rubric_file = name_dictionary.name_dict[key] + ' - Python 1.020 - Rubric'
-                query = 'name=' + "'" + rubric_file + "'"
-
-                # Google drive API to get ID of file
-                page_token = None
-                response = service_drive.files().list(q=query,
-                                      spaces='drive',
-                                      fields='nextPageToken, files(id, name)',
-                                     pageToken=page_token).execute()
-                for file in response.get('files', []):
-
-
-
-                    print("File is {}  id is {}".format(file.get('name'), file.get('id')))
-                    spreadsheet_id = file.get('id')
-
-
-          
-                    # sheets API to make edit to file if help_comment is found                              
-                    if help_comments > 0:
-                        # sheets API to make edit to file for helps
-                        p_body = { 'values': [['0']] }
-                    else:
-                        p_body = { 'values': [['-2.5']] }
-                   
-
-
-
-                    # Sheets API to update score (B22)
-                    range_name = 'Rubric' + '!B22'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
-                    
-                    
-
+ # for key in name_dictionary.name_dict:
+#             match = re.match('.+' + key + '.+', filename)
+#             if match:
+#
+#                 # construct query here
+#                 rubric_file = name_dictionary.name_dict[key] + ' - Python 1.020 - Rubric'
+#                 query = 'name=' + "'" + rubric_file + "'"
+#
+#                 # Google drive API to get ID of file
+#                 page_token = None
+#                 response = service_drive.files().list(q=query,
+#                                       spaces='drive',
+#                                       fields='nextPageToken, files(id, name)',
+#                                      pageToken=page_token).execute()
+#                 for file in response.get('files', []):
+#
+#
+#
+#                     print("File is {}  id is {}".format(file.get('name'), file.get('id')))
+#                     spreadsheet_id = file.get('id')
+#
+#
+#
+#                     # sheets API to make edit to file if help_comment is found
+#                     if help_comments > 0:
+#                         # sheets API to make edit to file for helps
+#                         p_body = { 'values': [['0']] }
+#                     else:
+#                         p_body = { 'values': [['-2.5']] }
+#
+#
+#
+#
+#                     # Sheets API to update score (B22)
+#                     range_name = 'Rubric' + '!B22'
+#                     result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id,
+#                                                                            range=range_name,
+#                                                                            valueInputOption='USER_ENTERED',
+#                                                                            body=p_body).execute()
+#
+#
+#
