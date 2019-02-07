@@ -91,6 +91,9 @@ for filename in os.listdir('.'):
                     spreadsheet_id = file.get('id')
 
 
+                    datapoints = []
+                    value = ''
+                    
                     # Find whether or not there is a help
                     cmd = 'grep "#" ' + filename + ' | grep help | wc -l  '
                     c = delegator.run(cmd)
@@ -98,17 +101,17 @@ for filename in os.listdir('.'):
                     
                     # sheets API to make edit to file if help_comment is found                              
                     if help_comments > 0:
-                        # sheets API to make edit to file for helps
-                        p_body = { 'values': [['0']] }
+                        value = '0'
                     else:
-                        p_body = { 'values': [['-5']] }
+                        value = '-5'
                    
                     # Edit Google sheet for helps
                     range_name = 'Rubric' + '!B4'    
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                               range=range_name,
-                                                                               valueInputOption='USER_ENTERED',
-                                                                               body=p_body).execute()
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                }
+                    datapoints.append(datapoint)
+
 
                     # Find number of PEP8 errors
                     cmd = 'pycodestyle ' + filename + ' | wc -l  '
@@ -118,13 +121,14 @@ for filename in os.listdir('.'):
                     side_errors *= -1
 
                     # sheets API to make edit to file for number of errors
-                    p_body = { 'values': [[side_errors]] }
+                    value =  str(side_errors)
+
                     # Edit Google sheet for PEP8 errors (B9)
                     range_name = 'Rubric' + '!B9'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
 
                     # Check that asks at least 5 questions
                     cmd = 'grep "input" ' + filename + ' | wc -l  '
@@ -133,14 +137,17 @@ for filename in os.listdir('.'):
                     
                     # sheets API to make edit to file for at least 5 questions
                     if inputs < 5:
-                        p_body = { 'values': [['-5']] }
+                        value = '-5'
                     else:
-                        p_body = { 'values': [['0']] }
+                        value = '0'
+
                     range_name = 'Rubric' + '!F4'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
+
+
 
                     # Check that inputs are named after part of speech
                     cmd = 'grep -E "verb|noun|adjective|adverb|preposition" ' + filename + ' | wc -l  '
@@ -149,40 +156,42 @@ for filename in os.listdir('.'):
                     
                     # Sheets API to test for parts of speech
                     if parts_of_speech < 5:
-                        p_body = { 'values': [['-5']] }
+                        value = '-5'
                     else:
-                        p_body = { 'values': [['0']] }
+                        value = '0'
+
                     range_name = 'Rubric' + '!F5'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
                         
                     # Check for at least 1 print statement
                     cmd = 'grep "print" ' + filename + ' | wc -l  '
                     c = delegator.run(cmd)
                     prints = int(c.out)
                     if prints < 1:
-                        p_body = { 'values': [['-5']] }
+                        value = '-5'
                     else:
-                        p_body = { 'values': [['0']] }
+                        value = '0'
                     range_name = 'Rubric' + '!F6'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
                         
+
                     # Check for less than 3 print statement
                     if prints > 3:
-                        p_body = { 'values': [['-5']] }
+                        value = '-5'
                     else:
-                        p_body = { 'values': [['0']] }
+                        value = '0'
                     range_name = 'Rubric' + '!F7'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id,
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
-
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
+                        
                     # Check that things are in correct order.  First 5 inputs show up in output)
                     filename_output = filename + '.out'
                     cmd = '/usr/local/bin/python3.6 ' + filename + ' < /users/teacher/PycharmProjects/untitled/1.060/1.060.in > ' \
@@ -199,15 +208,15 @@ for filename in os.listdir('.'):
                     search_object_4 = re.search(r"b1", outfile_data, re.X | re.M | re.S)
                     search_object_5 = re.search(r"b2", outfile_data, re.X | re.M | re.S)
                     if search_object_1 and search_object_2 and search_object_3 and search_object_4 and search_object_5:
-                        p_body = { 'values': [['0']] }
+                        value = '0'
                     else:
-                        p_body = { 'values': [['-15']] }
+                        value = '-15'
                     range_name = 'Rubric' + '!F8'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
-                    
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
+
                     # Check for 3 punctuations
                     filename_output = filename + '.out'
                     cmd = '/usr/local/bin/python3.6 ' + filename + ' < /users/teacher/PycharmProjects/untitled/1.060/1.060.in > ' \
@@ -224,16 +233,21 @@ for filename in os.listdir('.'):
                     num_exclamations = outfile_data.count('!')
                     num_punctuations = num_periods + num_questions + num_exclamations
                     if num_punctuations < 3:
-                        p_body = { 'values': [['-5']] }
+                        value = '-5'
                     else:
-                        p_body = { 'values': [['0']] }
+                        value = '0'
                     range_name = 'Rubric' + '!F9'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
-                        
- 
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
+
+                    body = {'valueInputOption': 'USER_ENTERED',
+                            'data':datapoints}
+                    result = service_sheets.spreadsheets().values().batchUpdate(spreadsheetId=spreadsheet_id,
+                                                                                body=body).execute()
+                    
+
                     
                     
                     

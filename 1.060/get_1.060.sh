@@ -6,5 +6,5 @@ cd /Users/teacher/PycharmProjects/untitled/$LAB
 while IFS= read -r line;
 do
    $HOME/bin/gdrive_download.sh $line
-   sleep 1
+   sleep 2 
 done < "/tmp/blah.$$"
