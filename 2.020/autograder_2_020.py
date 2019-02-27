@@ -91,6 +91,9 @@ for filename in os.listdir('.'):
 
                     print("File is {}  id is {}".format(file.get('name'), file.get('id')))
                     spreadsheet_id = file.get('id')
+                    
+                    datapoints = []
+                    value = ''
 
 
                     # Find whether or not there is a help
@@ -100,33 +103,32 @@ for filename in os.listdir('.'):
                     
                     # sheets API to make edit to file if help_comment is found                              
                     if help_comments > 0:
-                        # sheets API to make edit to file for helps
-                        p_body = { 'values': [['0']] }
+                        value = '0'
                     else:
-                        p_body = { 'values': [['-5']] }
+                        value = '-5'
                    
                     # Edit Google sheet for helps
                     range_name = 'Rubric' + '!B4'    
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                               range=range_name,
-                                                                               valueInputOption='USER_ENTERED',
-                                                                               body=p_body).execute()
-
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
+              
                     # Find number of PEP8 errors
-                    cmd = 'pycodestyle  --max-line-length=120 ' + filename + ' | wc -l  '
+                    cmd = 'pycodestyle  --max-line-length=120  --ignore=E305,E226 ' + filename + ' | wc -l  '
                     c = delegator.run(cmd)
                     side_errors = int(c.out)
                     side_errors = min(side_errors, 14)
                     side_errors *= -1
 
                     # sheets API to make edit to file for number of errors
-                    p_body = { 'values': [[side_errors]] }
+                    value =  str(side_errors)
                     # Edit Google sheet for PEP8 errors (B9)
                     range_name = 'Rubric' + '!B9'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
 
                     # Check that divides by 2 correctly (float)
                     filename_output = filename + '.out'
@@ -140,29 +142,28 @@ for filename in os.listdir('.'):
                     
                     # sheets API to make edit to file for dividing by 2 correctly
                     if not search_object:
-                        p_body = { 'values': [['-15']] }
+                        value = '-15'
                     else:
-                        p_body = { 'values': [['0']] }
+                        value = '0'
                     range_name = 'Rubric' + '!F5'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
-
-
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
+                    
                     # Check that divides by 2 correctly (integer)
                     search_object = re.search(r"49$", outfile_data, re.X | re.M | re.S)
                     
                     # Sheets API to edit to file for divide by 2 correctly (integer)
                     if not search_object:
-                        p_body = { 'values': [['-15']] }
+                        value = '-15'
                     else:
-                        p_body = { 'values': [['0']] }
+                        value = '0'
                     range_name = 'Rubric' + '!F6'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
                         
                     # Check that input works for something like 3.5
                     filename_output = filename + '.out'
@@ -177,12 +178,16 @@ for filename in os.listdir('.'):
 
                     # Sheets API to edit to file for working for 3.5 or not
                     if search_object1 and search_object2:
-                        p_body = { 'values': [['0']] }
+                        value = '0'
                     else:
-                        p_body = { 'values': [['-6']] }
+                        value = '-6'
                     range_name = 'Rubric' + '!F7'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
-                        
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
+
+                    body = {'valueInputOption': 'USER_ENTERED',
+                            'data':datapoints}
+                    result = service_sheets.spreadsheets().values().batchUpdate(spreadsheetId=spreadsheet_id,
+                                                                                body=body).execute()

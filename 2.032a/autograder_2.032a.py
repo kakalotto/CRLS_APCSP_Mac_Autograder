@@ -77,7 +77,7 @@ for filename in os.listdir('.'):
             match = re.match('.+' + key + '.+', filename) 
             if match:
                 # construct query here
-                rubric_file = name_dictionary.name_dict[key] + ' -  Python 2.032 - Rubric'
+                rubric_file = name_dictionary.name_dict[key] + ' - Python 2.032 - Rubric'
                 query = 'name=' + "'" + rubric_file + "'"
                 # Google drive API to get ID of file
                 page_token = None
@@ -91,6 +91,10 @@ for filename in os.listdir('.'):
                     print("File is {}  id is {}".format(file.get('name'), file.get('id')))
                     spreadsheet_id = file.get('id')
 
+                    datapoints = []
+                    value = ''
+
+
 
                     # Find whether or not there is a help
                     cmd = 'grep "#" ' + filename + ' | grep help | wc -l  '
@@ -99,17 +103,17 @@ for filename in os.listdir('.'):
                     
                     # sheets API to make edit to file if help_comment is found                              
                     if help_comments > 0:
-                        # sheets API to make edit to file for helps
-                        p_body = { 'values': [['0']] }
+                        value = '0'
                     else:
-                        p_body = { 'values': [['-2.5']] }
-                   
+                        value = '-2.5'
+                        
                     # Edit Google sheet for helps
-                    range_name = 'Rubric' + '!B4'    
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                               range=range_name,
-                                                                               valueInputOption='USER_ENTERED',
-                                                                               body=p_body).execute()
+                    range_name = 'Rubric' + '!B4'                        
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
+
 
                     # Find number of PEP8 errors
                     cmd = 'pycodestyle  --max-line-length=120 ' + filename + ' | wc -l  '
@@ -119,14 +123,15 @@ for filename in os.listdir('.'):
                     side_errors *= -1
 
                     # sheets API to make edit to file for number of errors
-                    p_body = { 'values': [[side_errors]] }
+                    value =  str(side_errors)
                     # Edit Google sheet for PEP8 errors (B10)
                     range_name = 'Rubric' + '!B10'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
 
+                    
                     # Check for ifs
                     cmd = 'grep "if" ' + filename + ' | wc -l  '
                     c = delegator.run(cmd)
@@ -134,18 +139,17 @@ for filename in os.listdir('.'):
 
                     # Sheets API to make edit to file for if or no (2.032a)
                     if ifs == 0:
-                        p_body = { 'values': [['0']] }
+                        value = '0'
                     else:
-                        p_body = { 'values': [['-5']] }
+                        value = '-5'
                     
                     # sheets API to make edit to file ifs
                     # Edit Google sheet for if  (F7))
                     range_name = 'Rubric' + '!F7'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
-
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
 
                     # test all 8 cases
                     eight_cases_score = 0
@@ -227,12 +231,18 @@ for filename in os.listdir('.'):
                     if search_object:
                         eight_cases_score += 1
 
-                    eight_cases_score *= -(8 - eight_cases_score)
+                    eight_cases_score = -(8 - eight_cases_score)
                     # Sheets API to make edit to file for test cases
-                    p_body = { 'values': [[eight_cases_score]] }                    
+                    value = eight_cases_score
                     range_name = 'Rubric' + '!F5'
-                    result = service_sheets.spreadsheets().values().update(spreadsheetId=spreadsheet_id, 
-                                                                           range=range_name,
-                                                                           valueInputOption='USER_ENTERED',
-                                                                           body=p_body).execute()
 
+                    datapoint = { 'range': range_name,
+                                  'values': [[value]]
+                                  }
+                    datapoints.append(datapoint)
+
+                    
+                    body = {'valueInputOption': 'USER_ENTERED',
+                            'data':datapoints}
+                    result = service_sheets.spreadsheets().values().batchUpdate(spreadsheetId=spreadsheet_id,
+                                                                                body=body).execute()
